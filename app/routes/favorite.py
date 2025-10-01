@@ -5,7 +5,7 @@ from typing import Literal
 from app.models.favorite import Favorite
 from app.models.content import Content
 
-router = APIRouter(tags=["Favorites"])
+router = APIRouter()
 
 
 # Add to favorites

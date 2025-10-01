@@ -14,7 +14,7 @@ class ContinueWatching(Document):
         collection = "continue_watching"
 
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "user_id": "user123",
                 "content_id": "movie456",

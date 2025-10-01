@@ -22,7 +22,7 @@ from datetime import datetime, timedelta, timezone
 import uuid
 from pydantic import BaseModel
 
-router = APIRouter(tags=["auth"])
+router = APIRouter()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
 # ---------------- HELPER ---------------- #

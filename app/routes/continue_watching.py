@@ -5,7 +5,7 @@ from app.models.content import Content
 from fastapi.encoders import jsonable_encoder
 from datetime import datetime, timezone
 
-router = APIRouter(tags=["Continue Watching"])
+router = APIRouter()
 
 # Save or update progress
 @router.post("/save")

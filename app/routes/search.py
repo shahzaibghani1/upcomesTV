@@ -4,7 +4,7 @@ from typing import Optional
 from app.models.content import Content
 from app.models.search_history import SearchHistory
 
-router = APIRouter(tags=["search"])
+router = APIRouter()
 
 
 # ========== SEARCH CONTENT ==========

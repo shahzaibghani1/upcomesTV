@@ -26,6 +26,10 @@ MONGO_DB = os.getenv("MONGO_DB", "upcomes_tv")
 client = AsyncIOMotorClient(MONGO_URL)
 database = client[MONGO_DB]
 
+movies_collection = database["movies"]
+series_collection = database["series"]
+channels_collection = database["tv_channels"]
+
 # Init Beanie ODM
 async def init_db():
     await init_beanie(

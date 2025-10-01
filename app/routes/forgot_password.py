@@ -13,7 +13,7 @@ from ..utils.security import (
 from ..utils.email import send_email
 from ..routes.auth import get_current_user
 
-router = APIRouter(tags=["Password"])
+router = APIRouter()
 
 # ---------- 1) Forgot password (email reset flow) ----------
 class ForgotRequest(BaseModel):

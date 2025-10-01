@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 from ..models.user import User, UserUpdate, UserOut
 from ..routes.auth import get_current_user
 
-router = APIRouter(tags=["Profile"])
+router = APIRouter()
 
 @router.put("/update", response_model=UserOut)
 async def update_profile(user_update: UserUpdate, current_user: User = Depends(get_current_user)):

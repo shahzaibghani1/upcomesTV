@@ -4,7 +4,7 @@ from fastapi.encoders import jsonable_encoder
 from app.models.content import Content
 from app.models.content_similarity import ContentSimilarity
 
-router = APIRouter(tags=["Recommendations"])
+router = APIRouter()
 
 
 @router.get("/{content_id}", summary="Get recommendations for a given content ID with pagination")

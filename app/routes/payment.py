@@ -10,7 +10,7 @@ from app.config import STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET
 from app.models.user import User
 from app.routes.auth import get_current_user
 
-router = APIRouter(tags=["Payment"])
+router = APIRouter()
 stripe.api_key = STRIPE_SECRET_KEY
 
 # ------------------- Request Models -------------------

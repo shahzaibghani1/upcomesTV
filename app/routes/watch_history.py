@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 from app.models.watch_history import WatchHistory
 from app.models.content import Content
 
-router = APIRouter(tags=["Watch History"])
+router = APIRouter()
 
 
 # Add to watch history (only if completed or channel)

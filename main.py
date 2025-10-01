@@ -15,13 +15,15 @@ logging.basicConfig(
     level=logging.DEBUG,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
 )
-logging.getLogger("pymongo").setLevel(logging.WARNING)
+logging.getLogger("pymongo").setLevel(logging.INFO)
+logging.getLogger("passlib.utils.compat").setLevel(logging.INFO)
+logging.getLogger("passlib.registry").setLevel(logging.INFO)
 logger = logging.getLogger("main")
 
 # Import routers
 from app.routes import auth, forgot_password, profile, payment, recommendation
 from app.routes.content import router as content_router
-from app.routes import watch_history, favorite, continue_watching, search
+from app.routes import watch_history, favorite, continue_watching, search, movie_route, series_route, liveChannel_route
 
 app = FastAPI(title="Upcomes TV Backend")
 
@@ -74,6 +76,9 @@ app.include_router(watch_history.router, prefix="/watch-history", tags=["Watch H
 app.include_router(favorite.router, prefix="/favorites", tags=["Favorites"])
 app.include_router(continue_watching.router, prefix="/continue", tags=["Continue Watching"])
 app.include_router(search.router, prefix="/content", tags=["Search"])
+app.include_router(movie_route.router, prefix="/movies", tags=["Movies"])
+app.include_router(series_route.router, prefix="/series", tags=["Series"])
+app.include_router(liveChannel_route.router, prefix="/channels", tags=["Channels"])
 
 # ---------- Root ----------
 @app.get("/")

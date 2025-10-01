@@ -6,11 +6,12 @@ from app.models.content import Content
 from fastapi.encoders import jsonable_encoder
 import random
 from datetime import datetime, timezone
+from app.utils.xtream_service_modified import fetch_and_sync_xtream_direct
 
 # switched from mock to Xtream service
 #from app.utils.xtream_service import fetch_and_sync_xtream  
 
-router = APIRouter(tags=["content"])
+router = APIRouter()
 
 # Request / Response schemas
 # ---------------------
@@ -141,3 +142,11 @@ async def delete_content(content_id: str):
 # async def sync_content():
 #     result = await fetch_and_sync_xtream()
 #     return {"status": "ok", "synced": result}
+
+
+# @router.get("/fetchContent")
+# async def fetchDataFromXtream():
+#     result = await fetch_and_sync_xtream_direct(limit_per_category=500)
+#     return result
+
+
