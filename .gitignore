@@ -1,0 +1,13 @@
+# Python files
+__pycache__/
+*.pyc
+
+# Virtual environment
+upcomes_backend/
+.env
+
+# VS Code directory (optional)
+.vscode/
+
+# Local configuration file
+app/config.py
