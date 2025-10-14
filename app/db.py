@@ -6,10 +6,9 @@ from beanie import init_beanie
 from app.models.user import User
 from app.models.payment import Package
 from app.models.payment import Subscription
-from app.models.content import Content
 from app.models.content_similarity import ContentSimilarity
 from app.models.watch_history import WatchHistory
-from app.models.favorite import Favorite
+from app.models.favourite import Favorite
 from app.models.continue_watching import ContinueWatching
 from app.models.search_history import SearchHistory
 from app.models.category import Category
@@ -28,7 +27,8 @@ database = client[MONGO_DB]
 
 movies_collection = database["movies"]
 series_collection = database["series"]
-channels_collection = database["tv_channels"]
+channels_collection = database["live_channels"]
+category_collection = database["categories"]
 
 # Init Beanie ODM
 async def init_db():
@@ -38,7 +38,6 @@ async def init_db():
             User,
             Package,
             Subscription,
-            Content,
             ContentSimilarity,
             WatchHistory,
             Favorite,

@@ -1,10 +1,9 @@
 from fastapi import APIRouter, HTTPException
-from motor.motor_asyncio import AsyncIOMotorClient
 from bson import ObjectId
-import os
 from app.db import channels_collection
 
 router = APIRouter()
+
 
 @router.get("/fetch")
 async def get_channels_list():
@@ -18,6 +17,7 @@ async def get_channels_list():
         projection = {
             "name": 1,
             "stream_icon": 1,
+            "stream_type": 1,
             "_id": 1
         }
 
@@ -29,6 +29,9 @@ async def get_channels_list():
 
         for channel in channels_list:
             channel["_id"] = str(channel["_id"])
+            # No need to add 'type' if 'stream_type' already exists
+            if "stream_type" not in channel:
+                channel["stream_type"] = "live_channel"
 
         return channels_list
 
@@ -36,6 +39,7 @@ async def get_channels_list():
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+
 
 @router.get("/fetch/{channel_id}")
 async def get_channel_by_id(channel_id: str):
@@ -56,6 +60,10 @@ async def get_channel_by_id(channel_id: str):
             raise HTTPException(status_code=404, detail="Channel not found")
 
         channel["_id"] = str(channel["_id"])
+        # Again, ensure the key exists but don't duplicate
+        if "stream_type" not in channel:
+            channel["stream_type"] = "live_channel"
+
         return channel
 
     except HTTPException:

@@ -5,39 +5,49 @@ from fastapi.encoders import jsonable_encoder
 from datetime import datetime, timezone
 
 from app.models.watch_history import WatchHistory
-from app.models.content import Content
+from app.models.movies import Movie
+from app.models.series import Series
+from app.models.live_channels import LiveChannel
 
 router = APIRouter()
 
-
-# Add to watch history (only if completed or channel)
+# =========================
+# ADD TO WATCH HISTORY
+# =========================
 @router.post("/", summary="Record watch history (prevent duplicates)")
 async def add_watch_history(
     user_id: str = Body(...),
     content_id: str = Body(...),
+    content_type: str = Body(..., description="movie | series | live_channel"),
     progress: float = Body(...),
     duration: Optional[float] = Body(None),
 ):
-    # Validate content exists
-    content = await Content.get(content_id)
+    # ✅ Validate that content exists in the appropriate collection
+    content = None
+    if content_type == "movie":
+        content = await Movie.get(content_id)
+    elif content_type == "series":
+        content = await Series.get(content_id)
+    elif content_type == "live_channel":
+        content = await LiveChannel.get(content_id)
+    else:
+        raise HTTPException(status_code=400, detail="Invalid content type")
+
     if not content:
         raise HTTPException(status_code=404, detail="Content not found")
 
+    # ✅ Check completion logic
     is_completed = False
-
-    # Movies / Series → add only if watched >= 90%
-    if content.content_type in ["movie", "series"] and duration:
+    if content_type in ["movie", "series"] and duration:
         if progress / duration >= 0.9:
             is_completed = True
-
-    # Channels → always add to history
-    if content.content_type == "channel":
+    elif content_type == "live_channel":
         is_completed = True
 
     if not is_completed:
         return {"status": "skipped", "reason": "not completed"}
 
-    # Check if this content is already in the user's history
+    # ✅ Check if already exists — update progress/time
     existing = await WatchHistory.find_one({"user_id": user_id, "content_id": content_id})
     if existing:
         existing.progress = progress
@@ -45,13 +55,20 @@ async def add_watch_history(
         await existing.save()
         return {"status": "updated", "id": str(existing.id)}
 
-    # Otherwise, insert a new history entry
-    history = WatchHistory(user_id=user_id, content_id=content_id, progress=progress)
+    # ✅ Create a new record
+    history = WatchHistory(
+        user_id=user_id,
+        content_id=content_id,
+        content_type=content_type,
+        progress=progress,
+    )
     await history.insert()
     return {"status": "added", "id": str(history.id)}
 
 
-# Get user watch history (deduplicated per content, latest only)
+# =========================
+# GET WATCH HISTORY
+# =========================
 @router.get("/{user_id}", summary="Get watch history for a user")
 async def get_watch_history(user_id: str, limit: int = Query(20, ge=1)):
     histories = (
@@ -60,32 +77,47 @@ async def get_watch_history(user_id: str, limit: int = Query(20, ge=1)):
         .to_list()
     )
 
-    # Deduplicate: only keep the latest entry per content_id
+    # Deduplicate per content_id (latest only)
     latest_by_content = {}
     for h in histories:
         if h.content_id not in latest_by_content:
-            latest_by_content[h.content_id] = h  # first occurrence is the latest due to sort
+            latest_by_content[h.content_id] = h
 
-    # Apply limit after deduplication
     limited_histories = list(latest_by_content.values())[:limit]
 
-    # Attach content info
+    # ✅ Attach content details based on content_type
     result = []
     for h in limited_histories:
-        content = await Content.get(h.content_id)
+        content = None
+        if h.content_type == "movie":
+            content = await Movie.get(h.content_id)
+        elif h.content_type == "series":
+            content = await Series.get(h.content_id)
+        elif h.content_type == "live_channel":
+            content = await LiveChannel.get(h.content_id)
+
         if content:
             result.append(
                 {
                     "history_id": str(h.id),
                     "watched_at": h.watched_at,
                     "progress": h.progress,
-                    "content": jsonable_encoder(content),
+                    "content_type": h.content_type,
+                    "content": {
+                        "_id": str(content.id),
+                        "name": getattr(content, "name", None),
+                        "stream_icon": getattr(content, "stream_icon", None)
+                        or getattr(content, "cover", None),
+                    },
                 }
             )
+
     return {"history": result}
 
 
-# Delete an entry
+# =========================
+# DELETE SINGLE ENTRY
+# =========================
 @router.delete("/{history_id}", summary="Remove an item from watch history")
 async def delete_watch_history(history_id: str):
     history = await WatchHistory.get(history_id)
@@ -96,7 +128,9 @@ async def delete_watch_history(history_id: str):
     return {"status": "deleted", "id": history_id}
 
 
-# Clear all watch history for a user
+# =========================
+# CLEAR ALL HISTORY
+# =========================
 @router.delete("/clear/{user_id}", summary="Clear all watch history for a user")
 async def clear_watch_history(user_id: str):
     deleted = await WatchHistory.find({"user_id": user_id}).delete()

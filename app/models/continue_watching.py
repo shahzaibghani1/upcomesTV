@@ -1,25 +1,16 @@
 from datetime import datetime, timezone
 from beanie import Document
 from pydantic import Field
+from typing import Optional
 
 class ContinueWatching(Document):
     user_id: str
     content_id: str
-    progress: float = Field(default=0.0) 
-    duration: float = Field(default=0.0) 
-    last_watched: datetime = Field(default_factory=datetime.now(timezone.utc))
+    content_type: str           # "movie" | "series" | "live_channel"
+    progress: Optional[float] = 0.0   # seconds or percentage watched
+    duration: Optional[float] = 0.0   # total seconds if available
+    last_watched: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
     class Settings:
         name = "continue_watching"
         collection = "continue_watching"
-
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "user_id": "user123",
-                "content_id": "movie456",
-                "progress": 125.5,
-                "duration": 3600.0,
-                "last_watched": datetime.now(timezone.utc)
-            }
-        }

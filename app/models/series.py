@@ -36,7 +36,6 @@ class Series(Document):
     category_name: Optional[str] = None
     stream_url: Optional[str] = None
     seasons: List[Season] = Field(default_factory=list)
-
     last_updated: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
     class Settings:

@@ -21,9 +21,8 @@ logging.getLogger("passlib.registry").setLevel(logging.INFO)
 logger = logging.getLogger("main")
 
 # Import routers
-from app.routes import auth, forgot_password, profile, payment, recommendation
-from app.routes.content import router as content_router
-from app.routes import watch_history, favorite, continue_watching, search, movie_route, series_route, liveChannel_route
+from app.routes import auth, favourite, forgot_password, live_channels, movie, profile, payment, recommendation, series, categories
+from app.routes import watch_history, continue_watching, search
 
 app = FastAPI(title="Upcomes TV Backend")
 
@@ -70,15 +69,15 @@ app.include_router(auth.router, prefix="/auth", tags=["Auth"])
 app.include_router(forgot_password.router, prefix="/password", tags=["Password Management"])
 app.include_router(profile.router, prefix="/profile", tags=["Profile"])
 app.include_router(payment.router, prefix="/payment", tags=["Payment"])
-app.include_router(content_router, prefix="/content", tags=["Content"])
 app.include_router(recommendation.router, prefix="/recommendations", tags=["Recommendations"])
 app.include_router(watch_history.router, prefix="/watch-history", tags=["Watch History"])
-app.include_router(favorite.router, prefix="/favorites", tags=["Favorites"])
+app.include_router(favourite.router, prefix="/favorites", tags=["Favorites"])
 app.include_router(continue_watching.router, prefix="/continue", tags=["Continue Watching"])
-app.include_router(search.router, prefix="/content", tags=["Search"])
-app.include_router(movie_route.router, prefix="/movies", tags=["Movies"])
-app.include_router(series_route.router, prefix="/series", tags=["Series"])
-app.include_router(liveChannel_route.router, prefix="/channels", tags=["Channels"])
+app.include_router(search.router, prefix="/search", tags=["Search"])
+app.include_router(movie.router, prefix="/movies", tags=["Movies"])
+app.include_router(series.router, prefix="/series", tags=["Series"])
+app.include_router(live_channels.router, prefix="/channels", tags=["Channels"])
+app.include_router(categories.router, prefix="/categories", tags=["Categories"])
 
 # ---------- Root ----------
 @app.get("/")

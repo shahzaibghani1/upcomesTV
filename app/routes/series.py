@@ -1,7 +1,6 @@
 from fastapi import APIRouter, HTTPException
 from motor.motor_asyncio import AsyncIOMotorClient
 from bson import ObjectId
-import os
 from app.db import series_collection
 
 router = APIRouter()
@@ -29,6 +28,7 @@ async def get_series():
 
         for series in series_list:
             series["_id"] = str(series["_id"])
+            series["type"] = "series"  # Explicitly add type
 
         return series_list
 
@@ -36,6 +36,7 @@ async def get_series():
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+
 
 @router.get("/fetch/{series_id}")
 async def get_series_by_id(series_id: str):
@@ -56,6 +57,7 @@ async def get_series_by_id(series_id: str):
             raise HTTPException(status_code=404, detail="Series not found")
 
         series["_id"] = str(series["_id"])
+        series["type"] = "series"
         return series
 
     except HTTPException:
