@@ -17,10 +17,11 @@ from app.models.category import Category
 from app.models.movies import Movie
 from app.models.series import Series
 from app.models.live_channels import LiveChannel
+from app.config import MONGO_URL
 
 # Load MongoDB connection details from env (fallback to local)
 # MONGO_URL = os.getenv("MONGO_URL", "mongodb://localhost:27017")
-MONGO_URL = os.getenv("MONGO_URL", "mongodb+srv://jiya:jiya123@cluster0.ame7wri.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")
+MONGO_URL = os.getenv("MONGO_URL", MONGO_URL)
 MONGO_DB = os.getenv("MONGO_DB", "upcomes_tv")
 
 client = AsyncIOMotorClient(MONGO_URL)
