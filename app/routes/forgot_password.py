@@ -26,7 +26,8 @@ async def forgot_password(payload: ForgotRequest):
         return {"msg": "If that email exists and is verified, a reset link has been sent."}
 
     token = create_password_reset_token(str(user.id))
-    reset_link = f"http://10.0.2.2:8000/password/reset?token={token}"
+    # reset_link = f"http://10.0.2.2:8000/password/reset?token={token}"
+    reset_link = f"https://upcomestv.site/password/reset?token={token}"
 
     send_email(
         to_email=user.email,
