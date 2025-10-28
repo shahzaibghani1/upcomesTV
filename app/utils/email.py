@@ -1,10 +1,10 @@
 import smtplib
 from email.mime.text import MIMEText
 from email_validator import validate_email, EmailNotValidError
-from typing import Dict
+from typing import Dict, Union
 
 # A placeholder function to simulate a third-party email validation API.
-async def verify_email_existence(email: str) -> Dict[str, str | bool]:
+async def verify_email_existence(email: str) -> Dict[str, Union[str,bool]]:
     """
     Simulates a call to a third-party email verification service.
     
