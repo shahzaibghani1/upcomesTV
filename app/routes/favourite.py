@@ -1,119 +1,111 @@
-# app/routes/favourites.py
 from fastapi import APIRouter, HTTPException, Body, Query
 from typing import Literal, Optional
 from bson import ObjectId
-from fastapi.encoders import jsonable_encoder
 from app.models.favourite import Favorite
-from app.db import movies_collection, series_collection, channels_collection
+from app.models.movies import Movie
+from app.models.series import Series
+from app.models.live_channels import LiveChannel
 
 router = APIRouter()
 
-async def _get_content_doc(content_id: str, content_type: str) -> Optional[dict]:
-
+async def _get_content_details(content_id: str, content_type: str) -> Optional[dict]:
+    """Get content details from the appropriate collection"""
     if not ObjectId.is_valid(content_id):
         return None
 
-    oid = ObjectId(content_id)
-
     if content_type == "movie":
-        doc = await movies_collection.find_one({"_id": oid})
+        content = await Movie.get(content_id)
     elif content_type == "series":
-        doc = await series_collection.find_one({"_id": oid})
+        content = await Series.get(content_id)
     elif content_type == "channel":
-        doc = await channels_collection.find_one({"_id": oid})
+        content = await LiveChannel.get(content_id)
     else:
-        doc = None
+        return None
 
-    return doc
+    return content.model_dump() if content else None
 
 
-# Add to favorites
-@router.post("/", summary="Add to favorites")
-async def add_to_favorites(
+@router.put("/toggle", summary="Toggle Favorite Status")
+async def toggle_favorite(
     user_id: str = Body(...),
     content_id: str = Body(...),
     content_type: Literal["movie", "series", "channel"] = Body(...),
 ):
-    # Validate content exists in the corresponding collection
-    content_doc = await _get_content_doc(content_id, content_type)
-    if content_doc is None:
+    """
+    Toggle favorite status for a content item.
+    - If favorite exists: delete it
+    - If favorite doesn't exist: create it
+    """
+    # Validate content exists
+    content_doc = await _get_content_details(content_id, content_type)
+    if not content_doc:
         raise HTTPException(status_code=404, detail="Content not found")
 
-    # Prevent duplicates
-    existing = await Favorite.find_one({"user_id": user_id, "content_id": content_id})
-    if existing:
-        return {"status": "exists", "id": str(existing.id)}
-
-    # Determine image field depending on content_type
-    image_val = ""
-    if content_type == "movie" or content_type == "channel":
-        image_val = content_doc.get("stream_icon") or ""
-    elif content_type == "series":
-        image_val = content_doc.get("cover") or ""
-
-    fav = Favorite(
-        user_id=user_id,
-        content_id=content_id,
-        name=content_doc.get("name", ""),
-        image=image_val,
-        content_type=content_type,
-        is_favorite=True,
+    # Check if favorite already exists
+    existing_fav = await Favorite.find_one(
+        Favorite.user_id == user_id,
+        Favorite.content_id == content_id
     )
 
-    await fav.insert()
-    return {"status": "added", "id": str(fav.id)}
+    if existing_fav:
+        # Delete existing favorite
+        await existing_fav.delete()
+        return {
+            "status": "removed",
+            "message": "Content removed from favorites",
+            "is_favorite": False
+        }
+    else:
+        # Create new favorite
+        fav = Favorite(
+            user_id=user_id,
+            content_id=content_id,
+            content_type=content_type
+        )
+        await fav.insert()
+        return {
+            "status": "added",
+            "message": "Content added to favorites",
+            "favorite_id": str(fav.id),
+            "is_favorite": True
+        }
 
 
-# Get all favorites for a user (optionally filtered by content_type)
-@router.get("/{user_id}", summary="Get favorites")
-async def get_favorites(
+@router.get("/{user_id}/content", summary="Get Favorite Content Details")
+async def get_favorite_content(
     user_id: str,
     content_type: Optional[Literal["movie", "series", "channel"]] = Query(None),
 ):
+    """
+    Get detailed content information for user's favorites.
+    Returns array of complete content details with joined data.
+    """
+    # Build query
     query = {"user_id": user_id}
     if content_type:
         query["content_type"] = content_type
 
+    # Get user's favorites
     favorites = await Favorite.find(query).sort(-Favorite.added_at).to_list()
-
-    result = []
+    
+    content_details = []
+    
     for fav in favorites:
-        # Use stored name/image in favorite document as source of truth,
-        # but attempt to fetch the latest content doc to override if available
-        content_doc = await _get_content_doc(fav.content_id, fav.content_type)
-        if content_doc:
-            if fav.content_type in ("movie", "channel"):
-                image = content_doc.get("stream_icon") or fav.image or ""
-            else:
-                image = content_doc.get("cover") or fav.image or ""
-            name = content_doc.get("name") or fav.name or ""
-        else:
-            # content missing from main collections (deleted or removed) -> fallback to fav fields
-            image = fav.image or ""
-            name = fav.name or ""
-
-        result.append(
-            {
-                "favorite_id": str(fav.id),
-                "content_id": fav.content_id,
-                "_id": fav.content_id,
-                "name": name,
-                "image": image,
-                "type": fav.content_type,
-                "is_favorite": fav.is_favorite,
-                "added_at": fav.added_at.isoformat() if hasattr(fav, "added_at") else None,
-            }
-        )
-
-    return {"favorites": result}
-
-
-# Remove a single favorite
-@router.delete("/{favorite_id}", summary="Remove from favorites")
-async def remove_favorite(favorite_id: str):
-    fav = await Favorite.get(favorite_id)
-    if not fav:
-        raise HTTPException(status_code=404, detail="Favorite not found")
-
-    await fav.delete()
-    return {"status": "removed", "id": favorite_id}
+        # Get complete content details
+        content_data = await _get_content_details(fav.content_id, fav.content_type)
+        
+        if content_data:
+            # Add favorite metadata to content data
+            # content_data.update({
+            #     "favorite_id": str(fav.id),
+            #     "added_at": fav.added_at.isoformat(),
+            #     "is_favorite": True
+            # })
+            content_details.append(content_data)
+    
+    return {
+        "user_id": user_id,
+        "content_type": content_type or "all",
+        "count": len(content_details),
+        "content": content_details
+    }
