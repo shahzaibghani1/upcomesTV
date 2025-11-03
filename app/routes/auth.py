@@ -90,7 +90,8 @@ async def register(user: UserCreate, background_tasks: BackgroundTasks):
     await new_user.insert()
 
     token = create_email_verification_token(str(new_user.id))
-    verification_link = f"http://localhost:8000/auth/verify-email?token={token}"
+    # verification_link = f"http://localhost:8000/auth/verify-email?token={token}"
+    verification_link = f"https://upcomestv.site/auth/verify-email?token={token}"
 
     background_tasks.add_task(
         send_email,

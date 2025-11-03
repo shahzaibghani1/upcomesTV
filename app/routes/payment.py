@@ -6,7 +6,7 @@ from pydantic import BaseModel
 from app.db import database
 import stripe
 from datetime import datetime, timezone, timedelta
-from app.config import STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET
+from app.config import STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, FRONTEND_URL
 from app.models.user import User
 from app.routes.auth import get_current_user
 
@@ -59,6 +59,10 @@ async def create_checkout_session(req: CheckoutRequest):
         raise HTTPException(status_code=404, detail="Package not found")
     
     try:
+        # Use your app's custom URL scheme for deep linking
+        success_url = f"{FRONTEND_URL}payment/success?session_id={{CHECKOUT_SESSION_ID}}"
+        cancel_url = f"{FRONTEND_URL}payment/cancel"
+        
         session = stripe.checkout.Session.create(
             payment_method_types=["card"],
             line_items=[{
@@ -70,14 +74,21 @@ async def create_checkout_session(req: CheckoutRequest):
                 "quantity": 1,
             }],
             mode="payment",
-            success_url="https://example.com/success",
-            cancel_url="https://example.com/cancel",
-            metadata={"user_id": user_id, "package_id": str(package["_id"])}
+            success_url=success_url,
+            cancel_url=cancel_url,
+            metadata={
+                "user_id": user_id, 
+                "package_id": str(package["_id"]),
+                "package_name": package["name"]
+            }
         )
+        
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Stripe error: {str(e)}")
     
-    return {"checkout_url": session.url}
+    return {
+        "checkout_url": session.url,
+    }
 
 @router.post("/webhook")
 async def stripe_webhook(request: Request):
