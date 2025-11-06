@@ -43,15 +43,76 @@ async def forgot_password(payload: ForgotRequest):
 async def reset_password_form(token: str):
     html = f"""
     <!doctype html>
-    <html><head><meta charset="utf-8"><title>Reset Password</title></head>
-    <body>
-      <h2>Reset your password</h2>
-      <form method="POST" action="/password/reset">
-        <input type="hidden" name="token" value="{token}" />
-        <label>New password</label><br/>
-        <input type="password" name="new_password" required />
-        <button type="submit">Update password</button>
-      </form>
+    <html>
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Reset Password - UpComes TV</title>
+    </head>
+    <body style="
+        font-family: 'Poppins', 'Segoe UI', sans-serif;
+        background-color: #000;
+        color: #fff;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+    ">
+        <div style="
+            background: #111;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            width: 90%;
+            max-width: 380px;
+            padding: 30px 25px;
+            text-align: center;
+        ">
+            <!-- App Logo -->
+            <img src="/static/logo_with_name.png" alt="UpComes TV Logo" 
+                 style="width: 140px; height: auto; margin-bottom: 15px;">
+
+            <h2 style="margin-bottom: 10px; color: #FFD700;">Reset Your Password</h2>
+            <p style="font-size: 14px; color: #cccccc; margin-bottom: 25px;">
+                Enter your new password to continue watching UpComes TV.
+            </p>
+
+            <form method="POST" action="/password/reset" style="display: flex; flex-direction: column; gap: 15px;">
+                <input type="hidden" name="token" value="{token}" />
+                <input 
+                    type="password" 
+                    name="new_password" 
+                    placeholder="New Password" 
+                    required
+                    style="
+                        padding: 12px;
+                        border: none;
+                        border-radius: 8px;
+                        font-size: 15px;
+                        outline: none;
+                        background: #222;
+                        color: #00FF66;
+                        text-align: center;
+                    "
+                />
+                <button type="submit" style="
+                    background: #00FF66;
+                    color: #000;
+                    padding: 12px;
+                    border: none;
+                    border-radius: 8px;
+                    font-size: 16px;
+                    font-weight: bold;
+                    cursor: pointer;
+                    transition: 0.3s;
+                "
+                onmouseover="this.style.background='#FFD700'"
+                onmouseout="this.style.background='#00FF66'">
+                    Update Password
+                </button>
+            </form>
+        </div>
     </body>
     </html>
     """

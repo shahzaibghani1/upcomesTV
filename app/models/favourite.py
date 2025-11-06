@@ -6,7 +6,7 @@ from typing import Literal
 class Favorite(Document):
     user_id: str
     content_id: str
-    content_type: Literal["movie", "series", "channel"]
+    content_type: Literal["movie", "series", "live"]
     added_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
     class Settings:

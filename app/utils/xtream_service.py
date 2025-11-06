@@ -166,7 +166,7 @@ async def fetch_and_sync_series(category_id: str):
                                 episode_num=int(e.get("episode_num", 0)),
                                 title=e.get("title"),
                                 stream_id=int(ep_id),
-                                stream_url=f"{XC_URL}/series/{USERNAME}/{PASSWORD}/{series_id}/{ep_id}.{extension}",
+                                stream_url=f"{XC_URL}/series/{USERNAME}/{PASSWORD}/{ep_id}.{extension}",
                                 added=datetime.fromtimestamp(int(e.get("added", 0)), tz=timezone.utc)
                                 if e.get("added")
                                 else None,

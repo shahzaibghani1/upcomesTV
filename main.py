@@ -16,6 +16,9 @@ from fastapi.responses import StreamingResponse
 import httpx
 import logging
 import os
+from fastapi.staticfiles import StaticFiles
+
+
 
 # ---------- Logging Setup ----------
 logging.basicConfig(
@@ -46,11 +49,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.mount("/static", StaticFiles(directory="app/static"), name="static")
+
+
 
 # ---------- Startup ----------
 @app.on_event("startup")
 async def on_startup():
-    logger.info("App startup: initializing DB...")
     await init_db()
     logger.info("DB initialized.")
 
@@ -100,104 +105,24 @@ app.include_router(series.router, prefix="/series", tags=["Series"])
 app.include_router(live_channels.router, prefix="/channels", tags=["Channels"])
 app.include_router(categories.router, prefix="/categories", tags=["Categories"])
 
+@app.get("/fetch-series")
+async def save_series_again():
+    try:
+        await fetch_and_sync_categories("series")
+        # Series
+        series_cats = await Category.find().to_list()
+        for cat in series_cats:
+            logger.info(f"📺 Syncing series for category: {cat.category_name} ({cat.category_id})")
+            await fetch_and_sync_series(cat.category_id)
+
+
+
+        logger.info("✅ All content synced successfully.")
+
+    except Exception as e:
+        logger.error(f"Content sync failed: {e}")
+
 # ---------- Root ----------
 @app.get("/")
 def root():
     return {"msg": "Upcomes TV Backend running"}
-
-# VIDEO_DIR = "videos" 
-
-
-# @app.get("/video/{filename}")
-# async def stream_video(filename: str, request: Request):
-#     file_path = os.path.join(VIDEO_DIR, filename)
-
-#     if not os.path.exists(file_path):
-#         raise HTTPException(status_code=404, detail="Video not found")
-
-#     file_size = os.path.getsize(file_path)
-#     range_header = request.headers.get("range", None)
-
-#     if range_header is None:
-#         start = 0
-#         end = file_size - 1
-#     else:
-#         range_match = range_header.replace("bytes=", "").split("-")
-#         start = int(range_match[0])
-#         end = int(range_match[1]) if range_match[1] else file_size - 1
-
-#     chunk_size = (end - start) + 1
-
-#     def iterfile():
-#         with open(file_path, "rb") as f:
-#             f.seek(start)
-#             remaining = chunk_size
-#             while remaining > 0:
-#                 data = f.read(min(1024 * 1024, remaining))  # 1MB chunks
-#                 if not data:
-#                     break
-#                 remaining -= len(data)
-#                 yield data
-
-#     headers = {
-#         "Content-Range": f"bytes {start}-{end}/{file_size}",
-#         "Accept-Ranges": "bytes",
-#         "Content-Length": str(chunk_size),
-#         "Content-Type": "video/mp4"
-#     }
-
-#     return StreamingResponse(iterfile(), status_code=206, headers=headers)
-
-# async def stream_video(url: str, range_header: str | None):
-#     headers = {"Range": range_header} if range_header else {}
-#     logger.info(f"➡️ Requesting origin with headers: {headers}")
-
-#     async with httpx.AsyncClient(follow_redirects=True) as client:
-#         origin = await client.get(url, headers=headers, timeout=None)
-#         logger.info(f"✅ Origin replied {origin.status_code}")
-
-#         if origin.status_code not in (200, 206):
-#             raise HTTPException(502, f"Bad origin status: {origin.status_code}")
-
-#         return origin
-
-
-# CHUNK_SIZE = 1024 * 64  # 64KB chunks (sweet spot)
-
-
-# @app.get("/proxy")
-# async def proxy(request: Request, url: str):
-#     client_ip = request.client.host
-#     range_header = request.headers.get("Range")
-
-#     logger.info(f"📥 Client {client_ip} requested URL: {url}")
-#     logger.info(f"📡 Client Range header: {range_header}")
-
-#     origin = await stream_video(url, range_header)
-#     content_type = origin.headers.get("Content-Type", "application/octet-stream")
-#     content_range = origin.headers.get("Content-Range")
-#     content_length = origin.headers.get("Content-Length")
-
-#     logger.info(f"🎞 Content-Type: {content_type}")
-#     logger.info(f"📏 Content-Range: {content_range}")
-#     logger.info(f"📦 Content-Length: {content_length}")
-
-#     async def generate():
-#         try:
-#             async for chunk in origin.aiter_bytes():
-#                 yield chunk
-#         except Exception as e:
-#             logger.error(f"❌ Client aborted: {e}")
-
-#     return StreamingResponse(
-#         generate(),
-#         status_code=origin.status_code,
-#         media_type=content_type,
-#         headers={
-#             "Accept-Ranges": "bytes",
-#             "Content-Range": content_range or "",
-#             "Content-Length": content_length or "",
-#         }
-#     )
-
-
